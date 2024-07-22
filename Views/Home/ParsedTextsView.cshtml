@@ -1,0 +1,169 @@
+﻿@using PublicOpinionViewer.ViewModels
+@model ParsedTextsViewModel
+<head>
+    <link href="~/css/main.css" rel="stylesheet">
+    <title>Настройка анализа | Public Opinion Finder</title>
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.7.1/jquery.min.js"></script>
+</head>
+<div class="montserratfont">
+    @if(Model.ParsedPosts != null)
+    {
+        @if (TempData["Topic"] != null)
+        {
+            <h2 class="centeredheader">Агрегация по теме "@TempData["Topic"]" завершена</h2>
+        }
+        <h3 id="totalpostsheader" class="centeredheader"></h3>
+        <h3 id="totalcommentsheader" class="centeredheader"></h3>
+    }
+    else if(Model.ParsedTexts != null)
+    {
+        <h2 class="centeredheader">Парсинг файла с текстами для анализа завершен</h2>
+        <h3 id="totaltextsheader" class="centeredheader"></h3>
+    }
+    <h2 class="centeredheader">Задайте настройки анализа</h2>
+    @using (Html.BeginForm("GetSentiments", "Home"))
+    {
+    <input name="topic" type="hidden" value="@TempData["Topic"]" />
+    <input name="areposts" type="hidden" value="@(Model.ParsedPosts != null ? 1 : 0)" />
+    <div class="centeredblock">
+        <div>
+            <div class="startalignedblock">
+                @Html.Label("modellabel", "Модель для анализа тональности:", new { @class = "gappedelem" })
+
+                <select name="modeltype" class="gappedelem" id="modelselect">
+                    <option value="1">MLP + обучаемый Embedding</option>
+                    <option value="2">MLP + Word2Vec</option>
+                    <option value="3">CNN</option>
+                    <option value="4">SimpleRNN</option>
+                    <option value="5">LSTM</option>
+                    <option value="6">GRU</option>
+                    <option value="7">Наивный байесовский классификатор</option>
+                    <option selected value="8">Логистическая регрессия</option>
+                    <option value="9">SVM</option>
+                </select>
+            </div>
+            <div class="startalignedblock" id="vectorselect">
+                @Html.Label("modellabel", "Способ векторизации:", new { @class = "gappedelem" })
+
+                <select name="vectortype" class="gappedelem">
+                    <option value="1">"Мешок слов"</option>
+                    <option selected value="2">Tf-Idf</option>
+                </select>
+            </div>
+            <div class="startalignedblock">
+                @Html.Label("preprocesslabel", "Вид предобработки:", new { @class = "gappedelem" })
+                <select name="stemtype" class="gappedelem">
+                    <option selected value="1">Стемминг</option>
+                    <option value="2">Лемматизация</option>
+                </select>
+            </div>
+        </div>
+    </div>
+    <div class="centeredblock gappedelemhigh">
+        <input type="submit" value="Выполнить анализ" class="extendedinputhigh" />
+    </div>
+    }
+    @if(Model.Topics != null)
+    {
+    <h2 class="centeredheader">Найденные темы и связанные с ними слова:</h2>
+    <div class="centeredblock topicscontainer">
+        @for (int i = 0; i < Model.Topics.Count; i++)
+        {
+            <div class="topicblock">
+                <div class="topicblockheader">Тема #@(i + 1)</div>
+                @foreach (var term in Model.Topics[i].Terms)
+                {
+                    <div>
+                        @term.Key.Replace('|', ' ')
+                    </div>
+                }
+            </div>
+        }
+
+    </div>
+    }
+    @if(Model.ParsedPosts != null)
+    {
+    <h2 class="centeredheader">Найденные посты и комментарии</h2>
+    <div class="centeredblock">
+            <table class="textstable">
+            <tr>
+                <th>Пост</th>
+                <th>Текст</th>
+                <th>Пол автора</th>
+                <th>Возраст автора</th>
+            </tr>
+            @foreach (var post in Model.ParsedPosts)
+            {
+                <tbody class="textsection">
+                    <tr class="postrow">
+                        <td><a href="@post.Link" class="centerpostlink" target="_blank" rel="noopener noreferrer">Ссылка</a></td>
+                        <td class="cell">@post.ShortedText</td>
+                        <td class="cell">@post.AuthorSex</td>
+                        <td class="cell">@post.AuthorAge</td>
+                    </tr>
+                    @if (post.Comments != null)
+                    {
+                        foreach (var comment in post.Comments!)
+                        {
+                            <tr class="commentrow">
+                                <td></td>
+                                <td class="commenttextshift cell">@comment.ShortedText</td>
+                                <td class="cell">@comment.AuthorSex</td>
+                                <td class="cell">@comment.AuthorAge</td>
+                            </tr>
+                        }
+                    }
+                </tbody>
+            }
+        </table>
+    </div>
+    }
+    else if(Model.ParsedTexts != null)
+    {
+    <h2 class="centeredheader">Тексты для анализа</h2>
+    <div class="centeredblock">
+            <table class="textstable">
+            <tr>
+                <th>Текст</th>
+            </tr>
+            @foreach (var text in Model.ParsedTexts)
+            {
+                    <tbody class="textsection">
+                    <tr class="textrow">
+                        <td class="cell">@text.ShortedText</td>
+                    </tr>
+                </tbody>
+            }
+        </table>
+    </div>
+    }
+      
+</div>
+
+<script type="text/javascript">
+    $(document).ready(function () {
+        var postsCount = $(".postrow").length;
+        var commentsCount = $(".commentrow").length;
+        var textsCount = $(".textrow").length;
+        if (textsCount > 0) {
+            $("#totaltextsheader").html("Всего текстов для анализа: " + textsCount);
+        }
+        else {
+            $("#totalpostsheader").html("Всего постов: " + postsCount);
+            $("#totalcommentsheader").html("Всего комментариев: " + commentsCount);
+        }       
+    });
+</script>
+
+<script type="text/javascript">
+    $("#modelselect").change(function () {
+        if ($("#modelselect").find(":selected").val() > 6) {
+            $("#vectorselect").css("display", "block");
+        }
+        else {
+            $("#vectorselect").css("display", "none");
+        }
+    });
+</script>
+

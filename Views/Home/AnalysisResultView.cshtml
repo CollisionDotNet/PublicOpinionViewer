@@ -1,0 +1,290 @@
+﻿@using PublicOpinionViewer.Models
+@using PublicOpinionViewer.ViewModels
+@using System.Globalization
+@model AnalysisResultViewModel
+<head>
+    <link href="~/css/main.css" rel="stylesheet">
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.7.1/jquery.min.js"></script>    
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <title>Результат анализа | Public Opinion Finder</title>
+</head>
+<div class="montserratfont"> 
+    @if(Model.AnalyzedPosts != null)
+    {
+        <h2 class="centeredheader">Результат анализа тональности по теме "@TempData["Topic"]"</h2>
+        <div class="centeredblock">
+            <div class="chart">
+                <div class="centeredblock">Посты:</div>
+                <canvas id="postsChart"></canvas>
+            </div>
+            <div class="chart">
+                <div class="centeredblock">Комментарии:</div>
+                <canvas id="commentsChart"></canvas>
+            </div>
+        </div>
+        <div style="height:30px;"></div>
+        <h2 class="centeredheader">Задать фильтрацию результатов:</h2>
+        <div class="centeredblock">
+            <div>
+                <div class="startalignedblock sexselectoffset">
+                    <select name="modeltype" class="gappedelem" id="sexselect">
+                        <option selected value="0">Любой</option>
+                        <option value="1">Мужской</option>
+                        <option value="2">Женский</option>
+                    </select>
+                    <label id="sexselectlabel" class="gappedelem">Пол автора</label>
+                </div>
+                <div style="line-height:60%;"><br></div>
+                <div class="startalignedblock checkboxoffset">
+                    @Html.CheckBox("filterage", false, new { @class = "extendedinput" })
+                    <label id="filteragelabel" class="gappedelem">Учитывать возраст?</label>
+                </div>
+                <div style="line-height:60%;"><br></div>
+                <div class="startalignedblock">
+                    @Html.TextBox("minage", "",
+                             new
+                             {
+                                 @type = "number",
+                                 @min = "1",
+                                 @max = "100",
+                                 @required = "",
+                                 @class = "extendedinput horizontallylimited"
+                             })
+                    <label id="postscountlabel" class="gappedelem">Минимальный возраст автора</label>
+                </div>
+                <div style="line-height:60%;"><br></div>
+                <div class="startalignedblock">
+                    @Html.TextBox("maxage", "",
+                             new
+                             {
+                                 @type = "number",
+                                 @min = "1",
+                                 @max = "100",
+                                 @required = "",
+                                 @class = "extendedinput horizontallylimited"
+                             })
+                    <label id="postscountlabel" class="gappedelem">Максимальный возраст автора</label>
+                </div>
+            </div>
+        </div>
+        <div style="height:20px;"></div>
+        <h2 class="centeredheader">Помогите нам улучшить качество моделей!</h2>
+        <h2 class="centeredheader">Если тональность текста определена неверно - укажите верную в столбце "Изменить тональность"</h2>
+        <div style="height:20px;"></div>
+        <h2 class="centeredheader">Проанализированные посты и комментарии</h2>
+    }
+    else
+    {
+        <h2 class="centeredheader">Результат анализа тональности заданных текстов</h2>
+        <div class="centeredblock">
+            <div class="chart">
+                <canvas id="textsChart"></canvas>
+            </div>
+        </div>
+        <div style="height:30px;"></div>
+        <h2 class="centeredheader">Помогите нам улучшить качество моделей! Если тональность текста определена неверно - укажите верную в столбце "Изменить тональность"</h2>
+        <div style="height:30px;"></div>
+        <h2 class="centeredheader">Проанализированные тексты</h2>
+    }   
+    <div class="centeredblock">
+        <table class="textstable">
+            <tr>
+                @if (Model.AnalyzedPosts != null)
+                {
+                    <th>Пост</th>
+                }
+                <th>Текст</th>
+                <th>Пол автора</th>
+                <th>Возраст автора</th>
+                <th>Тональность</th>
+                <th>Шанс</th>
+                <th>Изменить тональность</th>
+            </tr>
+            @{
+                int rownum = 0;
+            }
+            @if (Model.AnalyzedPosts != null)
+            {
+                @foreach (var post in Model.AnalyzedPosts)
+                {
+                    rownum++;
+                    <tbody class="textsection">
+                        <tr class="postrow @post.Tonality.ToString().ToLower()">
+                            <td><a href="@post.Link" class="centerpostlink" target="_blank" rel="noopener noreferrer">Ссылка</a></td>
+                            <td class="cell">@post.ShortedText</td>
+                            <td class="cell sex">@post.AuthorSex</td>
+                            <td class="cell age">@post.AuthorAge</td>
+                            <td class="cell centertextcell"><img src="~/img/@post.IconName" width="30" height="30" /></td>
+                            <td class="cell centertextcell">@(post.TonalityChance == null ? "-" : post.TonalityChance.Value.ToString("0.00%", CultureInfo.InvariantCulture))</td>
+                            <td class="cell centertextcell">
+                                <input type="hidden" id="text@(rownum)" value="@post.Text" />
+                                <select id="tonality@(rownum)" class="gappedelem">
+                                    <option @(post.Tonality == Sentiment.Label.Negative ? "selected" : "") value="0">Негативный</option>
+                                    <option @(post.Tonality == Sentiment.Label.Neutral ? "selected" : "") value="1">Нейтральный</option>
+                                    <option @(post.Tonality == Sentiment.Label.Positive ? "selected" : "") value="2">Позитивный</option>
+                                </select>
+                                <button id="tonalitybtn@(rownum)" onclick="saveSentiment(@rownum)">Сохранить</button>
+                            </td>
+                        </tr>
+                        @if (post.Comments != null)
+                        {
+                            foreach (var comment in post.Comments!)
+                            {
+                                <tr class="commentrow @comment.Tonality.ToString().ToLower()">
+                                    <td></td>
+                                    <td class="commenttextshift cell">@comment.ShortedText</td>
+                                    <td class="cell sex">@comment.AuthorSex</td>
+                                    <td class="cell age">@comment.AuthorAge</td>
+                                    <td class="cell centertextcell"><img src="~/img/@comment.IconName" width="30" height="30" /></td>
+                                    <td class="cell centertextcell">@(comment.TonalityChance == null ? "-" : comment.TonalityChance.Value.ToString("0.00%", CultureInfo.InvariantCulture))</td>
+                                    <td class="cell centertextcell">
+                                        <input type="hidden" id="text@(rownum)" value="@comment.Text" />
+                                        <select id="tonality@(rownum)" class="gappedelem">
+                                            <option @(comment.Tonality == Sentiment.Label.Negative ? "selected" : "") value="0">Негативный</option>
+                                            <option @(comment.Tonality == Sentiment.Label.Neutral ? "selected" : "") value="1">Нейтральный</option>
+                                            <option @(comment.Tonality == Sentiment.Label.Positive ? "selected" : "") value="2">Позитивный</option>
+                                        </select>
+                                        <button id="tonalitybtn@(rownum)" onclick="saveSentiment(@rownum)">Сохранить</button>
+                                    </td>
+                                </tr>
+                            }
+                        }
+                    </tbody>
+                }
+            }
+            else if(Model.AnalyzedTexts != null)
+            {
+                @foreach (var text in Model.AnalyzedTexts)
+                {
+                    rownum++;
+                    <tbody class="textsection @text.Tonality.ToString().ToLower()">
+                        <tr class="row">
+                            <td class="cell">@text.ShortedText</td>
+                            <td class="cell centertextcell"><img src="~/img/@text.IconName" width="30" height="30" /></td>
+                            <td class="cell centertextcell">@(text.TonalityChance == null ? "-" : text.TonalityChance.Value.ToString("0.00%", CultureInfo.InvariantCulture))</td>
+                            <td class="cell centertextcell">
+                                <input type="hidden" id="text@(rownum)" value="@text.Text" />
+                                <select id="tonality@(rownum)" class="gappedelem">
+                                    <option @(text.Tonality == Sentiment.Label.Negative ? "selected" : "") value="0">Негативный</option>
+                                    <option @(text.Tonality == Sentiment.Label.Neutral ? "selected" : "") value="1">Нейтральный</option>
+                                    <option @(text.Tonality == Sentiment.Label.Positive ? "selected" : "") value="2">Позитивный</option>
+                                </select>
+                                <button id="tonalitybtn@(rownum)" onclick="saveSentiment(@rownum)">Сохранить</button>
+                            </td>
+                        </tr>
+                    </tbody>
+                }
+            }
+        </table>
+    </div>
+</div>
+
+<script>
+    function createSentimentsChart(elementId, positiveCount, neutralCount, negativeCount) {
+        var oldChart = Chart.getChart(elementId);
+        if (oldChart !== undefined)
+            oldChart.destroy();
+        const elem = document.getElementById(elementId);
+        new Chart(elem, {
+            type: 'doughnut',
+            data: {
+                labels: ['Позитивный', 'Нейтральный', 'Негативный'],
+                datasets: [{
+                    label: 'Количество',
+                    data: [
+                        positiveCount,
+                        neutralCount,
+                        negativeCount
+                    ],
+                    backgroundColor: [
+                        'rgb(128, 255, 128)',
+                        'rgb(255, 255, 100)',
+                        'rgb(238, 58, 68)',
+                    ],
+                    borderWidth: 1
+                }],
+                options: {
+                    responsive: false,
+                    maintainAspectRatio: false
+                }
+            }
+        });
+    };
+</script>
+<script>
+    function updateCharts() {
+        var posts = [];
+        var comments = [];
+        $('.postrow').each(function (index) {
+            posts.push({ "tonality": $(this)[0].className.split(/\s+/)[1], "sex": $(this).children().filter(".sex").html(), "age": parseInt($(this).children().filter(".age").html()) });
+        });
+        $('.commentrow').each(function (index) {
+            comments.push({ "tonality": $(this)[0].className.split(/\s+/)[1], "sex": $(this).children().filter(".sex").html(), "age": parseInt($(this).children().filter(".age").html()) });
+        });
+        var sex = $('#sexselect').find(":selected").val();
+        if (sex == 1) {
+            posts = posts.filter((p) => p["sex"] == "Мужской");
+            comments = comments.filter((c) => c["sex"] == "Мужской");
+        }
+        else if (sex == 2) {
+            posts = posts.filter((p) => p["sex"] == "Женский");
+            comments = comments.filter((c) => c["sex"] == "Женский");
+        }
+        var filterage = $('#filterage').is(':checked');
+        if (filterage) {
+            var minage = $('#minage').val();
+            var maxage = $('#maxage').val();          
+            posts = posts.filter((p) => p["age"] >= minage && p["age"] <= maxage);
+            comments = comments.filter((c) => c["age"] >= minage && c["age"] <= maxage);
+            console.log(posts);
+            console.log(comments);
+        }
+        createSentimentsChart('postsChart', posts.filter((p) => p["tonality"] == 'positive').length, posts.filter((p) => p["tonality"] == 'neutral').length, posts.filter((p) => p["tonality"] == 'negative').length);
+        createSentimentsChart('commentsChart', comments.filter((c) => c["tonality"] == 'positive').length, comments.filter((c) => c["tonality"] == 'neutral').length, comments.filter((c) => c["tonality"] == 'negative').length);
+    }
+</script>
+<script>
+    $(document).ready(function () {
+        $('#minage').val(1);
+        $('#maxage').val(100);
+        updateCharts();
+        $('#sexselect').on('change', function () {
+            updateCharts();
+        });
+        $('#filterage').on('change', function () {
+            updateCharts();
+        });
+        $('#minage').on('change', function () {
+            if ($(this).val() > $('#maxage').val()) {
+                $(this).val($('#maxage').val());
+            }
+            updateCharts();           
+        });
+        $('#maxage').on('change', function () {
+             if ($(this).val() < $('#minage').val()) {
+                $(this).val($('#minage').val());
+            }
+            updateCharts();           
+        });
+    });
+</script>
+
+<script>
+    function saveSentiment(rownum) {
+        var tonality = $("#tonality" + rownum).find(":selected").val();
+        var text = $("#text" + rownum).val();
+        $.ajax({
+            type: "POST",
+            url: '@Url.Action("SaveCorrectSentimentText", "Home")',
+            data: {
+                text: text,
+                sentiment: tonality
+            },
+            success: function () {
+                $("#tonality" + rownum).remove();
+                $("#text" + rownum).remove();
+                $("#tonalitybtn" + rownum).remove();
+            }
+        });
+    }
+</script>

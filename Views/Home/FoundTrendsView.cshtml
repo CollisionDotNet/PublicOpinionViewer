@@ -1,0 +1,92 @@
+﻿@using PublicOpinionViewer.Models
+@model Topic[]
+<head>
+    <link href="~/css/main.css" rel="stylesheet">
+    <title>Тренды | Public Opinion Finder</title>
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.7.1/jquery.min.js"></script>
+</head>
+<body>
+<div class="montserratfont">
+    <h2 class="centeredheader">Найденные темы и связанные с ними слова:</h2>
+    <div class="centeredblock topicscontainer">
+    @for(int i = 0; i < Model.Length; i++)
+    {
+    <div class="topicblock">
+    <div class="topicblockheader">Тема #@(i + 1)</div>
+        @foreach (var term in Model[i].Terms)
+        {
+            <div>
+                @term.Key.Replace('|', ' ')
+            </div>     
+        }
+    </div>
+    }
+
+    </div>
+    <h2 class="centeredheader">Анализ по заданной теме:</h2>
+    @using (Html.BeginForm("Search", "Home"))
+    {
+        <div class="centeredblock">
+            <div>
+                <div class="startalignedblock">
+                    @Html.TextBox("poststheme", "", new { @class = "extendedinput horizontallylimited" })
+                    <label id="poststhemelabel" class="gappedelem">Тема постов и комментариев для анализа</label>
+                </div>
+                <div style="line-height:60%;"><br></div>
+                <div class="startalignedblock">
+                    @Html.TextBox("postscount", "",
+                             new
+                             {
+                                 @type = "number",
+                                 @min = "1",
+                                 @max = "1000",
+                                 @required = "",
+                                 @class = "extendedinput horizontallylimited"
+                             })
+                    <label id="postscountlabel" class="gappedelem">Количество постов (до 1000)</label>
+                </div>
+                <div style="line-height:60%;"><br></div>
+                <div class="startalignedblock commscheckboxoffset">
+                    @Html.CheckBox("withcomms", true, new { @class = "extendedinput" })
+                    <label id="withcommslabel" class="gappedelem">Включать комментарии?</label>
+                </div>
+                <div style="line-height:60%;"><br></div>
+                <div id="commsperpostblock" class="startalignedblock">
+                    @Html.TextBox("commsperpost", "",
+                             new
+                             {
+                                 @type = "number",
+                                 @min = "1",
+                                 @class = "extendedinput horizontallylimited"
+                             })
+                    <div>
+                        <label id="commsperpostlabel" class="gappedelem">Количество комментариев к посту</label>
+                        <div style="line-height:40%;"><br></div>
+                        <label id="commsperpostlabel2" class="gappedelem">Оставьте пустым, чтобы выгружать все</label>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="centeredblock gappedelemhigh">
+            <input id="postssearchsubmit" type="submit" value="Найти посты и комментарии" class="extendedinputhigh montserratfont" />
+        </div>
+    }
+</div>
+<script>
+    $(document).ready(function () {
+        $('#withcomms').click(function () {
+            if ($(this).is(':checked')) {
+                $('#poststopiclabel').text("Тема постов и комментариев");
+                $('#postssearchsubmit').val("Найти посты и комментарии");
+                $("#commsperpostblock").css("display", "flex");
+            }
+            else {
+                $('#poststopiclabel').text("Тема постов");
+                $('#postssearchsubmit').val("Найти посты");
+                $("#commsperpostblock").css("display", "none");
+            }
+
+        });
+    });
+</script>
+</body>
