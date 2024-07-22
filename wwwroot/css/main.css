@@ -1,0 +1,110 @@
+﻿body {
+}
+@font-face {
+    font-family: 'Montserrat Regular';
+    src: url('../fonts/Montserrat-Regular.ttf') format('truetype'), 
+         url('../fonts/Montserrat-Regular.woff') format('woff');
+}
+.centeredheader {
+    text-align: center;
+}
+.centeredblock {
+    display: flex;
+    justify-content: center;
+}
+.startalignedblock {
+    display: flex;
+    justify-content: flex-start;
+    align-items: center;
+}
+.endalignedblock {
+    display: flex;
+    justify-content: flex-end;
+    align-items: center;
+}
+.horizontallylimited {
+    width: 160px;
+}
+.extendedinput {
+    padding: 4px;
+}
+.gappedelem {
+    margin: 4px;
+}
+.extendedinputhigh {
+    padding: 6px;
+}
+
+.gappedelemhigh {
+    margin: 12px;
+}
+.montserratfont {
+    font-family: 'Montserrat Regular';
+}
+
+input.montserratfont {
+    font-family: 'Montserrat Regular';
+}
+
+.textstable {
+    border-collapse: collapse;
+    width: 85%;
+}
+
+.textsection {
+    border: 1px solid black;
+    border-radius: 4px;
+}
+
+.cell {
+    padding: 6px;
+}
+
+.commentrow {
+    border-top: 1px dotted gray;
+}
+
+.commenttextshift {
+    padding-left: 30px;
+}
+
+.centerpostlink {
+    display: block;
+    text-align: center;
+    margin: 0 12px;
+}
+
+.centertextcell {
+    text-align: center;
+}
+
+.chart {
+    display: inline-block;
+    width: 200px;
+    height: 200px;
+}
+
+.sexselectoffset {
+    margin-left: 76px;
+}
+
+.checkboxoffset {
+    margin-left: 140px;
+}
+
+.topicscontainer {
+    flex-wrap: wrap;
+}
+
+.topicblock {
+    display: flex;
+    border: 1px solid black;
+    border-radius: 4px;
+    flex-direction: column;
+    margin: 10px;
+    padding: 10px;
+}
+
+.topicblockheader {
+    text-align: center;
+}
